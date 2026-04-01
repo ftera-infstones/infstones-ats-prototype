@@ -1,16 +1,37 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { FileText, MessageSquare, Send, Clock } from 'lucide-react';
+import { Paperclip, FileText, X, Check, Star, ChevronDown, Pencil } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
-import type { Comment } from '../mock/data';
 
 export default function ApplicationDetailPage() {
   const { id: appId } = useParams<{ id: string }>();
-  const { applications, candidates, jobs, stages, comments, stageHistory, users, currentUser, dispatch } = useApp();
-  const [commentText, setCommentText] = useState('');
+  const {
+    applications,
+    candidates,
+    jobs,
+    stages,
+    interviewers,
+    currentUser,
+    dispatch,
+  } = useApp();
+
+  // ── Move Stage UI state ─────────────────────────────────────────────────────
+  const [moveStageOpen, setMoveStageOpen] = useState(false);
+  const [selectedNewStage, setSelectedNewStage] = useState<string | null>(null);
+
+  // ── Stage Interviewer edit state ────────────────────────────────────────────
+  const [editingStageId, setEditingStageId] = useState<string | null>(null);
+  const [editingInterviewerIds, setEditingInterviewerIds] = useState<string[]>([]);
+
+  // ── Resume drawer state ─────────────────────────────────────────────────────
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // ── Feedback stage selector ─────────────────────────────────────────────────
+  const [feedbackStageId, setFeedbackStageId] = useState<string | null>(null);
 
   const application = applications.find(a => a.id === appId);
+
   if (!application) {
     return (
       <div className="min-h-screen bg-zinc-50">
@@ -24,33 +45,9 @@ export default function ApplicationDetailPage() {
   const job = jobs.find(j => j.id === application.job_id);
   const currentStage = stages.find(s => s.id === application.stage_id);
   const sortedStages = [...stages].sort((a, b) => a.display_order - b.display_order);
-  const appComments = comments.filter(c => c.application_id === appId);
-  const appHistory = stageHistory
-    .filter(h => h.application_id === appId)
-    .sort((a, b) => new Date(a.moved_at).getTime() - new Date(b.moved_at).getTime());
 
-  const handleAddComment = () => {
-    if (!commentText.trim() || !currentUser) return;
-    const newComment: Comment = {
-      id: `cm-${Date.now()}`,
-      application_id: appId!,
-      user_id: currentUser.id,
-      content: commentText.trim(),
-      created_at: new Date().toISOString(),
-    };
-    dispatch({ type: 'ADD_COMMENT', comment: newComment });
-    setCommentText('');
-  };
-
-  const handleMoveStage = (stageId: string) => {
-    if (!currentUser) return;
-    dispatch({
-      type: 'MOVE_APPLICATION',
-      applicationId: appId!,
-      newStageId: stageId,
-      userId: currentUser.id,
-    });
-  };
+  // Feedback: default to current stage on first render
+  const activeFeedbackStageId = feedbackStageId ?? application.stage_id;
 
   const formatDate = (iso: string) => {
     try {
@@ -60,24 +57,88 @@ export default function ApplicationDetailPage() {
     } catch { return iso; }
   };
 
-  const formatDateTime = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleString('en-US', {
-        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-      });
-    } catch { return iso; }
-  };
-
-  const getUserName = (userId: string) => users.find(u => u.id === userId)?.name ?? 'Unknown';
-  const getStageName = (stageId: string | null) => stageId
-    ? stages.find(s => s.id === stageId)?.name ?? stageId
-    : '—';
-
   const sourceColors: Record<string, string> = {
     LinkedIn: 'bg-blue-100 text-blue-700',
     Referral: 'bg-purple-100 text-purple-700',
     Website: 'bg-zinc-100 text-zinc-600',
     Other: 'bg-gray-100 text-gray-600',
+  };
+
+  // ── Move Stage handlers ─────────────────────────────────────────────────────
+  const handleMoveStageConfirm = () => {
+    if (!selectedNewStage || !currentUser) return;
+    dispatch({
+      type: 'MOVE_APPLICATION',
+      applicationId: appId!,
+      newStageId: selectedNewStage,
+      userId: currentUser.id,
+    });
+    setMoveStageOpen(false);
+    setSelectedNewStage(null);
+  };
+
+  const handleMoveStageCancel = () => {
+    setMoveStageOpen(false);
+    setSelectedNewStage(null);
+  };
+
+  // ── Stage Interviewer handlers ──────────────────────────────────────────────
+  const openInterviewerEdit = (stageId: string) => {
+    const current = application.stageInterviewers?.[stageId] ?? [];
+    setEditingStageId(stageId);
+    setEditingInterviewerIds([...current]);
+  };
+
+  const toggleInterviewer = (ivId: string) => {
+    setEditingInterviewerIds(prev =>
+      prev.includes(ivId) ? prev.filter(id => id !== ivId) : [...prev, ivId]
+    );
+  };
+
+  const saveInterviewers = () => {
+    if (!editingStageId) return;
+    dispatch({
+      type: 'UPDATE_STAGE_INTERVIEWERS',
+      applicationId: appId!,
+      stageId: editingStageId,
+      interviewerIds: editingInterviewerIds,
+    });
+    setEditingStageId(null);
+    setEditingInterviewerIds([]);
+  };
+
+  const cancelInterviewerEdit = () => {
+    setEditingStageId(null);
+    setEditingInterviewerIds([]);
+  };
+
+  // Interviewers for this job
+  const jobInterviewers = interviewers.filter(iv => iv.jobIds.includes(application.job_id));
+
+  const getInterviewerNames = (ids: string[]) =>
+    ids.map(id => interviewers.find(iv => iv.id === id)?.name ?? id).join(', ');
+
+  // ── Feedback helpers ────────────────────────────────────────────────────────
+  const currentStageOrder = currentStage?.display_order ?? 0;
+
+  const feedbackData = application.stageFeedback?.[activeFeedbackStageId];
+
+  const renderStars = (score: number | null) => {
+    if (score === null) {
+      return <span className="text-zinc-400 text-sm">No score yet</span>;
+    }
+    return (
+      <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4].map(n => (
+          <Star
+            key={n}
+            size={16}
+            className={n <= score ? 'text-yellow-400 fill-yellow-400' : 'text-zinc-200 fill-zinc-200'}
+          />
+        ))}
+        <span className="text-sm text-zinc-500 ml-1.5">{score}/4</span>
+      </div>
+    );
   };
 
   return (
@@ -87,164 +148,160 @@ export default function ApplicationDetailPage() {
         title={candidate?.name}
       />
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Candidate Info */}
-            <div className="bg-white rounded-xl border border-zinc-200 p-5">
-              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-4">Candidate</h2>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg">
-                  {candidate?.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="text-zinc-900 font-semibold text-lg">{candidate?.name}</h3>
-                  <p className="text-zinc-500 text-sm">{candidate?.email}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-zinc-400 block text-xs mb-0.5">Phone</span>
-                  <span className="text-zinc-700">{candidate?.phone}</span>
-                </div>
-                <div>
-                  <span className="text-zinc-400 block text-xs mb-0.5">Source</span>
-                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${sourceColors[candidate?.source ?? ''] ?? ''}`}>
-                    {candidate?.source}
-                  </span>
-                </div>
-              </div>
-            </div>
 
-            {/* Resume */}
-            <div className="bg-white rounded-xl border border-zinc-200 p-5">
-              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">Resume</h2>
-              {candidate?.resume_path ? (
-                <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-200">
-                  <FileText size={18} className="text-indigo-500" />
-                  <span className="text-zinc-700 text-sm">{candidate.resume_path}</span>
-                </div>
-              ) : (
-                <p className="text-zinc-400 text-sm">No resume attached.</p>
-              )}
-            </div>
+          {/* ═══════════════════════════════════════════════
+              LEFT PANEL (1/3): STAGES + APPLICATION INFO
+          ════════════════════════════════════════════════ */}
+          <div className="space-y-5">
 
-            {/* Stage History */}
+            {/* ── STAGES module ──────────────────────────── */}
             <div className="bg-white rounded-xl border border-zinc-200 p-5">
-              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-4">Stage History</h2>
-              {appHistory.length === 0 ? (
-                <p className="text-zinc-400 text-sm">No history yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {appHistory.map((h, i) => (
-                    <div key={h.id} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5" />
-                        {i < appHistory.length - 1 && (
-                          <div className="w-0.5 h-full bg-zinc-200 mt-1" />
-                        )}
-                      </div>
-                      <div className="pb-3">
-                        <p className="text-zinc-700 text-sm">
-                          {h.from_stage_id
-                            ? <><span className="text-zinc-400">{getStageName(h.from_stage_id)}</span> → <span className="font-medium">{getStageName(h.to_stage_id)}</span></>
-                            : <span className="font-medium">Applied → {getStageName(h.to_stage_id)}</span>
-                          }
-                        </p>
-                        <p className="text-zinc-400 text-xs mt-0.5 flex items-center gap-1">
-                          <Clock size={11} />
-                          {formatDateTime(h.moved_at)} · {getUserName(h.moved_by_user_id)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Comments */}
-            <div className="bg-white rounded-xl border border-zinc-200 p-5">
-              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-4 flex items-center gap-2">
-                <MessageSquare size={14} />
-                Comments ({appComments.length})
-              </h2>
-
-              <div className="space-y-4 mb-4">
-                {appComments.map(comment => (
-                  <div key={comment.id} className="flex gap-3">
-                    <div className="w-7 h-7 rounded-full bg-zinc-100 text-zinc-600 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                      {getUserName(comment.user_id).split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-zinc-800 text-sm font-medium">{getUserName(comment.user_id)}</span>
-                        <span className="text-zinc-400 text-xs">{formatDateTime(comment.created_at)}</span>
-                      </div>
-                      <p className="text-zinc-600 text-sm leading-relaxed">{comment.content}</p>
-                    </div>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide">Stages</h2>
+                {!moveStageOpen ? (
+                  <button
+                    onClick={() => {
+                      setMoveStageOpen(true);
+                      setSelectedNewStage(application.stage_id);
+                    }}
+                    className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors"
+                  >
+                    <ChevronDown size={12} />
+                    Move Stage
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handleMoveStageConfirm}
+                      className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+                      title="Confirm"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      onClick={handleMoveStageCancel}
+                      className="p-1 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded transition-colors"
+                      title="Cancel"
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
-                ))}
-                {appComments.length === 0 && (
-                  <p className="text-zinc-400 text-sm">No comments yet. Be the first to comment.</p>
                 )}
               </div>
 
-              {/* Add Comment */}
-              <div className="border-t border-zinc-100 pt-4">
-                <textarea
-                  value={commentText}
-                  onChange={e => setCommentText(e.target.value)}
-                  placeholder="Add a comment..."
-                  rows={3}
-                  className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
-                />
-                <div className="flex justify-end mt-2">
-                  <button
-                    onClick={handleAddComment}
-                    disabled={!commentText.trim()}
-                    className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+              {/* Move stage dropdown (shown when open) */}
+              {moveStageOpen && (
+                <div className="mb-3">
+                  <select
+                    value={selectedNewStage ?? ''}
+                    onChange={e => setSelectedNewStage(e.target.value)}
+                    className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
                   >
-                    <Send size={13} />
-                    Comment
-                  </button>
+                    {sortedStages.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}{s.id === application.stage_id ? ' (current)' : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-            </div>
-          </div>
+              )}
 
-          {/* Right Column */}
-          <div className="space-y-5">
-            {/* Stage Selector */}
-            <div className="bg-white rounded-xl border border-zinc-200 p-5">
-              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">Move to Stage</h2>
-              <div className="space-y-2">
-                {sortedStages.map(stage => (
-                  <button
-                    key={stage.id}
-                    onClick={() => handleMoveStage(stage.id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
-                      application.stage_id === stage.id
-                        ? 'border-transparent text-white'
-                        : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
-                    }`}
-                    style={
-                      application.stage_id === stage.id
-                        ? { backgroundColor: stage.color, borderColor: stage.color }
-                        : {}
-                    }
-                  >
+              {/* Stage list */}
+              <div className="space-y-1">
+                {sortedStages.map(stage => {
+                  const isCurrent = stage.id === application.stage_id;
+                  const assignedIds = application.stageInterviewers?.[stage.id] ?? [];
+                  const isEditing = editingStageId === stage.id;
+
+                  return (
                     <div
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: application.stage_id === stage.id ? 'rgba(255,255,255,0.7)' : stage.color }}
-                    />
-                    {stage.name}
-                  </button>
-                ))}
+                      key={stage.id}
+                      className={`rounded-lg px-3 py-2.5 ${isCurrent ? 'bg-indigo-50 border border-indigo-200' : 'border border-transparent'}`}
+                    >
+                      {/* Stage name row */}
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: stage.color }}
+                        />
+                        <span className={`text-sm flex-1 ${isCurrent ? 'text-indigo-700 font-semibold' : 'text-zinc-600 font-medium'}`}>
+                          {stage.name}
+                        </span>
+                      </div>
+
+                      {/* Interviewer row */}
+                      {isEditing ? (
+                        <div className="mt-2 ml-4">
+                          {/* Checkbox list */}
+                          <div className="border border-zinc-200 rounded-lg divide-y divide-zinc-100 mb-2 max-h-40 overflow-y-auto">
+                            {jobInterviewers.length === 0 ? (
+                              <div className="px-3 py-2 text-xs text-zinc-400">No interviewers for this job.</div>
+                            ) : (
+                              jobInterviewers.map(iv => (
+                                <label
+                                  key={iv.id}
+                                  className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-zinc-50 text-xs"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={editingInterviewerIds.includes(iv.id)}
+                                    onChange={() => toggleInterviewer(iv.id)}
+                                    className="accent-indigo-500"
+                                  />
+                                  {iv.name}
+                                </label>
+                              ))
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={saveInterviewers}
+                              className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium"
+                            >
+                              <Check size={12} /> Save
+                            </button>
+                            <span className="text-zinc-300">·</span>
+                            <button
+                              onClick={cancelInterviewerEdit}
+                              className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600"
+                            >
+                              <X size={12} /> Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-1 ml-4">
+                          {assignedIds.length === 0 ? (
+                            <button
+                              onClick={() => openInterviewerEdit(stage.id)}
+                              className="text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+                            >
+                              ＋ Add Interviewer
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs text-zinc-500">{getInterviewerNames(assignedIds)}</span>
+                              <button
+                                onClick={() => openInterviewerEdit(stage.id)}
+                                className="text-zinc-400 hover:text-indigo-600 transition-colors"
+                                title="Edit interviewers"
+                              >
+                                <Pencil size={11} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Application Info */}
+            {/* ── APPLICATION INFO module ─────────────────── */}
             <div className="bg-white rounded-xl border border-zinc-200 p-5">
               <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">Application Info</h2>
               <div className="space-y-3 text-sm">
@@ -272,8 +329,159 @@ export default function ApplicationDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* ═══════════════════════════════════════════════
+              RIGHT PANEL (2/3): CANDIDATE + RESUME + FEEDBACK
+          ════════════════════════════════════════════════ */}
+          <div className="lg:col-span-2 space-y-5">
+
+            {/* ── CANDIDATE section ──────────────────────── */}
+            <div className="bg-white rounded-xl border border-zinc-200 p-5">
+              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-4">Candidate</h2>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg">
+                  {candidate?.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-zinc-900 font-semibold text-lg">{candidate?.name}</h3>
+                  <p className="text-zinc-500 text-sm">{candidate?.email}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-zinc-400 block text-xs mb-0.5">Phone</span>
+                  <span className="text-zinc-700">{candidate?.phone}</span>
+                </div>
+                <div>
+                  <span className="text-zinc-400 block text-xs mb-0.5">Source</span>
+                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${sourceColors[candidate?.source ?? ''] ?? ''}`}>
+                    {candidate?.source}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── RESUME section ─────────────────────────── */}
+            <div className="bg-white rounded-xl border border-zinc-200 p-5">
+              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">Resume</h2>
+              {candidate?.resume_path ? (
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-200 w-full text-left hover:bg-indigo-50 hover:border-indigo-200 transition-colors group"
+                >
+                  <Paperclip size={16} className="text-indigo-500 flex-shrink-0" />
+                  <span className="text-zinc-700 text-sm group-hover:text-indigo-700 transition-colors">
+                    {candidate.resume_path}
+                  </span>
+                </button>
+              ) : (
+                <p className="text-zinc-400 text-sm">No resume attached.</p>
+              )}
+            </div>
+
+            {/* ── STAGE FEEDBACK section ─────────────────── */}
+            <div className="bg-white rounded-xl border border-zinc-200 p-5">
+              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-4">Stage Feedback</h2>
+
+              {/* Stage pill tabs */}
+              <div className="flex flex-wrap gap-2 mb-5">
+                {sortedStages.map(stage => {
+                  const isDisabled = stage.display_order > currentStageOrder;
+                  const isActive = stage.id === activeFeedbackStageId;
+                  return (
+                    <button
+                      key={stage.id}
+                      onClick={() => !isDisabled && setFeedbackStageId(stage.id)}
+                      disabled={isDisabled}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                        isDisabled
+                          ? 'border-zinc-100 text-zinc-300 bg-zinc-50 cursor-not-allowed'
+                          : isActive
+                          ? 'border-transparent text-white'
+                          : 'border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50'
+                      }`}
+                      style={isActive && !isDisabled ? { backgroundColor: stage.color, borderColor: stage.color } : {}}
+                    >
+                      {stage.name}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Feedback content */}
+              {feedbackData === undefined ? (
+                <p className="text-zinc-400 text-sm">No feedback recorded yet.</p>
+              ) : (
+                <div className="space-y-5">
+                  {/* Score */}
+                  <div>
+                    <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide block mb-1.5">Score</span>
+                    {renderStars(feedbackData.score)}
+                  </div>
+
+                  {/* Interview Questions */}
+                  <div>
+                    <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide block mb-3">Interview Questions</span>
+                    {feedbackData.questions.length === 0 ? (
+                      <p className="text-zinc-400 text-sm">No feedback recorded yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {feedbackData.questions.map((qa, idx) => (
+                          <div key={idx} className="bg-zinc-50 rounded-lg p-4 border border-zinc-100">
+                            <p className="text-sm font-semibold text-zinc-800 mb-1.5">{qa.question}</p>
+                            <p className="text-sm text-zinc-600 leading-relaxed">{qa.feedback}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════════
+          RESUME DRAWER (slides in from right)
+      ════════════════════════════════════════════════ */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setDrawerOpen(false)}
+          />
+
+          {/* Drawer panel */}
+          <div className="relative bg-white w-full max-w-lg h-full shadow-2xl flex flex-col">
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Paperclip size={15} className="text-indigo-500" />
+                <span className="text-sm font-medium text-zinc-800">{candidate?.resume_path}</span>
+              </div>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Drawer body — PDF placeholder */}
+            <div className="flex-1 bg-zinc-100 flex flex-col items-center justify-center gap-4 p-8">
+              <div className="w-20 h-20 rounded-2xl bg-zinc-200 flex items-center justify-center">
+                <FileText size={36} className="text-zinc-400" />
+              </div>
+              <div className="text-center">
+                <p className="text-zinc-500 font-medium text-sm mb-1">PDF Preview not available in prototype</p>
+                <p className="text-zinc-400 text-xs">{candidate?.resume_path}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

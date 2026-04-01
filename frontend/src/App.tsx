@@ -5,6 +5,7 @@ import JobsListPage from './pages/JobsListPage';
 import KanbanPage from './pages/KanbanPage';
 import ApplicationDetailPage from './pages/ApplicationDetailPage';
 import PipelineSettingsPage from './pages/PipelineSettingsPage';
+import InterviewersPage from './pages/InterviewersPage';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/jobs/:id/kanban" element={<KanbanPage />} />
           <Route path="/applications/:id" element={<ApplicationDetailPage />} />
           <Route path="/settings/stages" element={<PipelineSettingsPage />} />
+          <Route path="/interviewers" element={<InterviewersPage />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>

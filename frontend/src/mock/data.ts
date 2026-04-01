@@ -31,12 +31,19 @@ export interface Candidate {
   resume_path?: string;
 }
 
+export interface StageFeedback {
+  score: number | null;
+  questions: Array<{ question: string; feedback: string }>;
+}
+
 export interface Application {
   id: string;
   job_id: string;
   candidate_id: string;
   stage_id: string;
   applied_at: string;
+  stageInterviewers?: Record<string, string[]>;
+  stageFeedback?: Record<string, StageFeedback>;
 }
 
 export interface Comment {
@@ -54,6 +61,13 @@ export interface StageHistory {
   to_stage_id: string;
   moved_at: string;
   moved_by_user_id: string;
+}
+
+export interface Interviewer {
+  id: string;
+  name: string;
+  email: string;
+  jobIds: string[];
 }
 
 export const mockUsers: User[] = [
@@ -130,18 +144,156 @@ export const mockCandidates: Candidate[] = [
   { id: 'c12', name: 'Mia Martin', email: 'mia.martin@yahoo.com', phone: '+1-415-555-0112', source: 'Referral' },
 ];
 
+export const mockInterviewers: Interviewer[] = [
+  { id: 'iv1', name: 'Rachel Kim', email: 'rachel.kim@infstones.com', jobIds: ['j1', 'j3'] },
+  { id: 'iv2', name: 'Marcus Lee', email: 'marcus.lee@infstones.com', jobIds: ['j1', 'j2'] },
+  { id: 'iv3', name: 'Priya Sharma', email: 'priya.sharma@infstones.com', jobIds: ['j2', 'j4'] },
+  { id: 'iv4', name: 'Tom Bradley', email: 'tom.bradley@infstones.com', jobIds: ['j3', 'j5'] },
+  { id: 'iv5', name: 'Chen Wei', email: 'chen.wei@infstones.com', jobIds: ['j1', 'j5'] },
+];
+
 export const mockApplications: Application[] = [
   // Senior Backend Engineer (j1)
-  { id: 'a1', job_id: 'j1', candidate_id: 'c1', stage_id: 's3', applied_at: '2026-03-05' },
-  { id: 'a2', job_id: 'j1', candidate_id: 'c2', stage_id: 's4', applied_at: '2026-03-06' },
+  {
+    id: 'a1',
+    job_id: 'j1',
+    candidate_id: 'c1',
+    stage_id: 's3',
+    applied_at: '2026-03-05',
+    stageInterviewers: {
+      's2': ['iv1'],
+      's3': ['iv1', 'iv2'],
+    },
+    stageFeedback: {
+      's2': {
+        score: 4,
+        questions: [
+          {
+            question: 'Walk me through your experience with distributed systems.',
+            feedback: 'Strong understanding of CAP theorem and eventual consistency. Demonstrated practical experience with Kafka and Cassandra at previous company.',
+          },
+          {
+            question: 'How do you handle production incidents?',
+            feedback: 'Has a well-defined on-call process. Uses structured incident response with clear runbooks and post-mortems.',
+          },
+        ],
+      },
+      's3': {
+        score: 3,
+        questions: [
+          {
+            question: 'Design a rate limiter for a high-traffic API.',
+            feedback: 'Good approach using token bucket algorithm. Could improve on edge cases around burst handling and distributed token synchronization.',
+          },
+          {
+            question: 'Explain your approach to database indexing and query optimization.',
+            feedback: 'Solid fundamentals. Mentioned covering indexes and query plan analysis. Could go deeper on sharding strategies.',
+          },
+        ],
+      },
+    },
+  },
+  {
+    id: 'a2',
+    job_id: 'j1',
+    candidate_id: 'c2',
+    stage_id: 's4',
+    applied_at: '2026-03-06',
+    stageInterviewers: {
+      's2': ['iv2'],
+      's3': ['iv1', 'iv5'],
+    },
+    stageFeedback: {
+      's2': {
+        score: 4,
+        questions: [
+          {
+            question: 'Describe your experience building microservices at scale.',
+            feedback: 'Excellent answer. Has hands-on experience with service mesh, circuit breakers, and distributed tracing.',
+          },
+        ],
+      },
+      's3': {
+        score: 4,
+        questions: [
+          {
+            question: 'How do you approach system design for a globally distributed service?',
+            feedback: 'Outstanding candidate. Covered geo-routing, multi-region replication, and latency trade-offs comprehensively.',
+          },
+          {
+            question: 'Tell me about a technical challenge you solved under pressure.',
+            feedback: 'Strong communication. Walked through a war story about a P0 outage with clear root cause analysis and follow-up actions.',
+          },
+        ],
+      },
+      's4': {
+        score: null,
+        questions: [],
+      },
+    },
+  },
   { id: 'a3', job_id: 'j1', candidate_id: 'c3', stage_id: 's1', applied_at: '2026-03-20' },
   { id: 'a4', job_id: 'j1', candidate_id: 'c4', stage_id: 's6', applied_at: '2026-03-08' },
   // Frontend Engineer (j2)
   { id: 'a5', job_id: 'j2', candidate_id: 'c5', stage_id: 's2', applied_at: '2026-03-10' },
-  { id: 'a6', job_id: 'j2', candidate_id: 'c6', stage_id: 's3', applied_at: '2026-03-11' },
+  {
+    id: 'a6',
+    job_id: 'j2',
+    candidate_id: 'c6',
+    stage_id: 's3',
+    applied_at: '2026-03-11',
+    stageInterviewers: {
+      's2': ['iv3'],
+      's3': ['iv2', 'iv3'],
+    },
+    stageFeedback: {
+      's2': {
+        score: 4,
+        questions: [
+          {
+            question: 'Describe your experience with React performance optimization.',
+            feedback: 'Excellent. Discussed memoization, virtual DOM diffing, code splitting, and lazy loading in detail.',
+          },
+        ],
+      },
+      's3': {
+        score: 3,
+        questions: [
+          {
+            question: 'How do you manage state in a large React application?',
+            feedback: 'Good knowledge of Context API, Redux, and Zustand. Could strengthen understanding of server state vs client state separation.',
+          },
+        ],
+      },
+    },
+  },
   { id: 'a7', job_id: 'j2', candidate_id: 'c7', stage_id: 's1', applied_at: '2026-03-22' },
   // DevOps Engineer (j3)
-  { id: 'a8', job_id: 'j3', candidate_id: 'c8', stage_id: 's3', applied_at: '2026-03-12' },
+  {
+    id: 'a8',
+    job_id: 'j3',
+    candidate_id: 'c8',
+    stage_id: 's3',
+    applied_at: '2026-03-12',
+    stageInterviewers: {
+      's3': ['iv1', 'iv4'],
+    },
+    stageFeedback: {
+      's3': {
+        score: 3,
+        questions: [
+          {
+            question: 'Walk us through how you would design a zero-downtime deployment pipeline.',
+            feedback: 'Solid approach with blue-green deployments and canary releases. Mentioned health checks and automatic rollback triggers.',
+          },
+          {
+            question: 'How do you monitor and alert on Kubernetes cluster health?',
+            feedback: 'Good knowledge of Prometheus and Grafana. Mentioned resource quotas and HPA. Could improve on multi-cluster observability.',
+          },
+        ],
+      },
+    },
+  },
   { id: 'a9', job_id: 'j3', candidate_id: 'c9', stage_id: 's5', applied_at: '2026-03-01' },
   // Product Manager (j4)
   { id: 'a10', job_id: 'j4', candidate_id: 'c10', stage_id: 's1', applied_at: '2026-03-18' },
