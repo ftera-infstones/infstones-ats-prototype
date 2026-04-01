@@ -8,6 +8,7 @@ import {
   mockApplications,
   mockComments,
   mockStageHistory,
+  mockInterviewers,
 } from '../mock/data';
 import type {
   User,
@@ -17,6 +18,7 @@ import type {
   Application,
   Comment,
   StageHistory,
+  Interviewer,
 } from '../mock/data';
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -29,6 +31,7 @@ interface AppState {
   applications: Application[];
   comments: Comment[];
   stageHistory: StageHistory[];
+  interviewers: Interviewer[];
   // Auth
   currentUser: User | null;
   isLoggedIn: boolean;
@@ -46,7 +49,11 @@ type Action =
   | { type: 'REORDER_STAGES'; orderedIds: string[] }
   | { type: 'UPDATE_STAGE'; stageId: string; name: string }
   | { type: 'ADD_STAGE'; stage: PipelineStage }
-  | { type: 'DELETE_STAGE'; stageId: string };
+  | { type: 'DELETE_STAGE'; stageId: string }
+  | { type: 'ADD_INTERVIEWER'; interviewer: Interviewer }
+  | { type: 'UPDATE_INTERVIEWER'; interviewer: Interviewer }
+  | { type: 'DELETE_INTERVIEWER'; interviewerId: string }
+  | { type: 'UPDATE_STAGE_INTERVIEWERS'; applicationId: string; stageId: string; interviewerIds: string[] };
 
 // ─── Reducer ─────────────────────────────────────────────────────────────────
 
@@ -107,6 +114,39 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'DELETE_STAGE':
       return { ...state, stages: state.stages.filter(s => s.id !== action.stageId) };
 
+    case 'ADD_INTERVIEWER':
+      return { ...state, interviewers: [...state.interviewers, action.interviewer] };
+
+    case 'UPDATE_INTERVIEWER':
+      return {
+        ...state,
+        interviewers: state.interviewers.map(i =>
+          i.id === action.interviewer.id ? action.interviewer : i
+        ),
+      };
+
+    case 'DELETE_INTERVIEWER':
+      return {
+        ...state,
+        interviewers: state.interviewers.filter(i => i.id !== action.interviewerId),
+      };
+
+    case 'UPDATE_STAGE_INTERVIEWERS':
+      return {
+        ...state,
+        applications: state.applications.map(app => {
+          if (app.id !== action.applicationId) return app;
+          const existing = app.stageInterviewers ?? {};
+          return {
+            ...app,
+            stageInterviewers: {
+              ...existing,
+              [action.stageId]: action.interviewerIds,
+            },
+          };
+        }),
+      };
+
     default:
       return state;
   }
@@ -130,6 +170,7 @@ const initialState: AppState = {
   applications: mockApplications,
   comments: mockComments,
   stageHistory: mockStageHistory,
+  interviewers: mockInterviewers,
   currentUser: null,
   isLoggedIn: false,
 };

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut, Users } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 interface NavbarProps {
@@ -50,6 +50,14 @@ export default function Navbar({ backLink, title }: NavbarProps) {
         >
           <Settings size={15} />
           Settings
+        </Link>
+
+        <Link
+          to="/interviewers"
+          className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-800 text-sm transition-colors"
+        >
+          <Users size={15} />
+          Interviewers
         </Link>
 
         {currentUser && (
