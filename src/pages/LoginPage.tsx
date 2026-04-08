@@ -1,18 +1,30 @@
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useLang } from '../context/LangContext';
 
 export default function LoginPage() {
   const { login, users } = useApp();
+  const { lang, setLang, t } = useLang();
   const navigate = useNavigate();
 
   const handleGoogleLogin = () => {
-    login(users[0]);
+    login(users.find(u => u.email === 'zhenwu@infstones.com') ?? users[0]);
     navigate('/jobs');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg border border-zinc-200 p-10 w-full max-w-sm text-center">
+        {/* Lang toggle */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-zinc-200 hover:bg-zinc-50 text-zinc-600 transition-colors"
+          >
+            {lang === 'en' ? t('nav_lang_toggle') : t('nav_lang_toggle_en')}
+          </button>
+        </div>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center">
@@ -24,8 +36,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <h1 className="text-zinc-800 text-2xl font-semibold mb-2">Welcome back</h1>
-        <p className="text-zinc-500 text-sm mb-8">Sign in to your InfStones account</p>
+        <h1 className="text-zinc-800 text-2xl font-semibold mb-2">{t('login_welcome')}</h1>
+        <p className="text-zinc-500 text-sm mb-8">{t('login_subtitle')}</p>
 
         <button
           onClick={handleGoogleLogin}
@@ -50,10 +62,10 @@ export default function LoginPage() {
               fill="#EA4335"
             />
           </svg>
-          Sign in with Google
+          {t('login_btn_google')}
         </button>
 
-        <p className="text-zinc-400 text-xs mt-6">Internal use only • InfStones employees</p>
+        <p className="text-zinc-400 text-xs mt-6">{t('login_internal_note')}</p>
       </div>
     </div>
   );
