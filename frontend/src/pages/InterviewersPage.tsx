@@ -2,18 +2,21 @@ import { useState } from 'react';
 import { Pencil, Trash2, X, Check, UserPlus } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
+import { useLang } from '../context/LangContext';
 import type { Interviewer } from '../mock/data';
 
 interface FormState {
   name: string;
   email: string;
+  meetingRoomLink: string;
   jobIds: string[];
 }
 
-const emptyForm: FormState = { name: '', email: '', jobIds: [] };
+const emptyForm: FormState = { name: '', email: '', meetingRoomLink: '', jobIds: [] };
 
 export default function InterviewersPage() {
   const { interviewers, jobs, dispatch } = useApp();
+  const { t } = useLang();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -28,7 +31,7 @@ export default function InterviewersPage() {
 
   const openEdit = (iv: Interviewer) => {
     setEditingId(iv.id);
-    setForm({ name: iv.name, email: iv.email, jobIds: [...iv.jobIds] });
+    setForm({ name: iv.name, email: iv.email, meetingRoomLink: iv.meetingRoomLink ?? '', jobIds: [...iv.jobIds] });
     setModalOpen(true);
   };
 
@@ -39,17 +42,18 @@ export default function InterviewersPage() {
   };
 
   const handleSave = () => {
-    if (!form.name.trim() || !form.email.trim()) return;
+    if (!form.name.trim() || !form.email.trim() || !form.meetingRoomLink.trim()) return;
     if (editingId) {
       dispatch({
         type: 'UPDATE_INTERVIEWER',
-        interviewer: { id: editingId, name: form.name.trim(), email: form.email.trim(), jobIds: form.jobIds },
+        interviewer: { id: editingId, name: form.name.trim(), email: form.email.trim(), meetingRoomLink: form.meetingRoomLink.trim(), jobIds: form.jobIds },
       });
     } else {
       const newInterviewer: Interviewer = {
         id: `iv-${Date.now()}`,
         name: form.name.trim(),
         email: form.email.trim(),
+        meetingRoomLink: form.meetingRoomLink.trim(),
         jobIds: form.jobIds,
       };
       dispatch({ type: 'ADD_INTERVIEWER', interviewer: newInterviewer });
@@ -106,6 +110,7 @@ export default function InterviewersPage() {
                 <tr>
                   <th className="text-left text-xs font-semibold text-zinc-500 uppercase tracking-wide px-5 py-3">Name</th>
                   <th className="text-left text-xs font-semibold text-zinc-500 uppercase tracking-wide px-5 py-3">Email</th>
+                  <th className="text-left text-xs font-semibold text-zinc-500 uppercase tracking-wide px-5 py-3">Meeting Room</th>
                   <th className="text-left text-xs font-semibold text-zinc-500 uppercase tracking-wide px-5 py-3">Jobs</th>
                   <th className="text-right text-xs font-semibold text-zinc-500 uppercase tracking-wide px-5 py-3">Actions</th>
                 </tr>
@@ -115,6 +120,14 @@ export default function InterviewersPage() {
                   <tr key={iv.id} className="hover:bg-zinc-50 transition-colors">
                     <td className="px-5 py-3.5 text-zinc-800 font-medium">{iv.name}</td>
                     <td className="px-5 py-3.5 text-zinc-500">{iv.email}</td>
+                    <td className="px-5 py-3.5 text-zinc-500">
+                      {iv.meetingRoomLink ? (
+                        <a href={iv.meetingRoomLink} target="_blank" rel="noreferrer"
+                          className="text-indigo-500 hover:text-indigo-700 text-xs truncate max-w-[160px] block">
+                          {iv.meetingRoomLink.replace('https://', '')}
+                        </a>
+                      ) : <span className="text-zinc-300">—</span>}
+                    </td>
                     <td className="px-5 py-3.5 text-zinc-600">
                       {iv.jobIds.length === 0
                         ? <span className="text-zinc-400">—</span>
@@ -190,7 +203,7 @@ export default function InterviewersPage() {
                   type="text"
                   value={form.name}
                   onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Full name"
+                  placeholder={t('interviewers_form_name_placeholder')}
                   className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
               </div>
@@ -202,7 +215,19 @@ export default function InterviewersPage() {
                   type="email"
                   value={form.email}
                   onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="email@infstones.com"
+                  placeholder={t('interviewers_form_email_placeholder')}
+                  className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+              </div>
+
+              {/* Meeting Room Link */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1.5">Meeting Room Link *</label>
+                <input
+                  type="url"
+                  value={form.meetingRoomLink}
+                  onChange={e => setForm(prev => ({ ...prev, meetingRoomLink: e.target.value }))}
+                  placeholder={t('interviewers_form_meeting_placeholder')}
                   className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
               </div>
@@ -241,7 +266,7 @@ export default function InterviewersPage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={!form.name.trim() || !form.email.trim()}
+                disabled={!form.name.trim() || !form.email.trim() || !form.meetingRoomLink.trim()}
                 className="px-4 py-2 text-sm font-medium bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
               >
                 {editingId ? 'Save Changes' : 'Add Interviewer'}
