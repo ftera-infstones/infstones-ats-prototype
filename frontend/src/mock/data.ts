@@ -415,6 +415,15 @@ export const mockApplications: Application[] = [
       's2': ['iv2'],
       's3': ['iv1', 'iv5'],
     },
+    stageInterviewerMeta: {
+      's2': {
+        'iv2': { meetingTime: '2026-03-11T10:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-09T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-09T09:05:00Z' },
+      },
+      's3': {
+        'iv1': { meetingTime: '2026-03-18T10:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-16T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-16T09:05:00Z' },
+        'iv5': { meetingTime: '2026-03-18T14:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-16T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-16T09:05:00Z' },
+      },
+    },
     stageFeedback: {
       's2': {
         'iv2': {
@@ -454,6 +463,15 @@ export const mockApplications: Application[] = [
       's2': ['iv3'],
       's3': ['iv2', 'iv3'],
     },
+    stageInterviewerMeta: {
+      's2': {
+        'iv3': { meetingTime: '2026-03-16T10:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-14T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-14T09:05:00Z' },
+      },
+      's3': {
+        'iv2': { meetingTime: '2026-03-22T10:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-20T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-20T09:05:00Z' },
+        'iv3': { meetingTime: '2026-03-22T14:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-20T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-20T09:05:00Z' },
+      },
+    },
     stageFeedback: {
       's2': {
         'iv3': {
@@ -489,6 +507,12 @@ export const mockApplications: Application[] = [
     applied_at: '2026-03-12',
     stageInterviewers: {
       's3': ['iv1', 'iv4'],
+    },
+    stageInterviewerMeta: {
+      's3': {
+        'iv1': { meetingTime: '2026-03-19T10:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-17T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-17T09:05:00Z' },
+        'iv4': { meetingTime: '2026-03-19T14:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-17T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-17T09:05:00Z' },
+      },
     },
     stageFeedback: {
       's3': {
