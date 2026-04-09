@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, ChevronDown, ChevronRight, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Trash2, GripVertical, ArrowUp, ArrowDown, FolderInput } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
 import type { FeedbackForm, FeedbackFormQuestion, FeedbackQuestionType, ScorecardCriterion } from '../mock/data';
@@ -19,6 +19,8 @@ export default function FeedbackFormsPage() {
   const [formNameDraft, setFormNameDraft] = useState('');
   const [showNewFormModal, setShowNewFormModal] = useState(false);
   const [newFormGroupId, setNewFormGroupId] = useState<string>('');
+  const [moveFormId, setMoveFormId] = useState<string | null>(null);
+  const [moveTargetGroupId, setMoveTargetGroupId] = useState<string>('');
 
   const selectedForm = feedbackForms.find(f => f.id === selectedFormId) ?? null;
 
@@ -45,6 +47,19 @@ export default function FeedbackFormsPage() {
   const confirmNewForm = () => {
     setShowNewFormModal(false);
     addForm(newFormGroupId || null);
+  };
+
+  const openMoveFormModal = (formId: string, currentGroupId: string | null) => {
+    setMoveFormId(formId);
+    setMoveTargetGroupId(currentGroupId ?? '');
+  };
+
+  const confirmMoveForm = () => {
+    if (!moveFormId) return;
+    const form = feedbackForms.find(f => f.id === moveFormId);
+    if (!form) return;
+    dispatch({ type: 'UPDATE_FEEDBACK_FORM', form: { ...form, group_id: moveTargetGroupId || null } });
+    setMoveFormId(null);
   };
 
   const addForm = (groupId: string | null) => {
@@ -206,6 +221,13 @@ export default function FeedbackFormsPage() {
                           {form.name}
                         </span>
                         <button
+                          onClick={e => { e.stopPropagation(); openMoveFormModal(form.id, form.group_id); }}
+                          className="text-zinc-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                          title="Move to group"
+                        >
+                          <FolderInput size={11} />
+                        </button>
+                        <button
                           onClick={e => { e.stopPropagation(); deleteForm(form.id); }}
                           className="text-zinc-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                         >
@@ -232,6 +254,13 @@ export default function FeedbackFormsPage() {
                       <span className={`flex-1 text-xs truncate ${selectedFormId === form.id ? 'text-indigo-700 font-semibold' : 'text-zinc-600'}`}>
                         {form.name}
                       </span>
+                      <button
+                        onClick={e => { e.stopPropagation(); openMoveFormModal(form.id, form.group_id); }}
+                        className="text-zinc-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        title="Move to group"
+                      >
+                        <FolderInput size={11} />
+                      </button>
                       <button
                         onClick={e => { e.stopPropagation(); deleteForm(form.id); }}
                         className="text-zinc-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
@@ -490,6 +519,45 @@ export default function FeedbackFormsPage() {
           </div>
         </div>
       </div>
+
+      {/* ═══ Move Form to Group Modal ═══ */}
+      {moveFormId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setMoveFormId(null)}>
+          <div className="bg-white rounded-xl shadow-xl p-6 w-80" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-zinc-900 mb-1">Move to Group</h3>
+            <p className="text-xs text-zinc-400 mb-4">
+              {feedbackForms.find(f => f.id === moveFormId)?.name}
+            </p>
+            <div className="mb-4">
+              <label className="block text-xs text-zinc-500 mb-1.5">Target Group</label>
+              <select
+                value={moveTargetGroupId}
+                onChange={e => setMoveTargetGroupId(e.target.value)}
+                className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              >
+                <option value="">No group (Ungrouped)</option>
+                {feedbackFormGroups.map(g => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setMoveFormId(null)}
+                className="px-4 py-2 text-sm text-zinc-600 hover:text-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmMoveForm}
+                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                Move
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ New Form Modal ═══ */}
       {showNewFormModal && (
