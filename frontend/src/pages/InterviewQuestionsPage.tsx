@@ -17,6 +17,8 @@ export default function FeedbackFormsPage() {
   const [editingGroupName, setEditingGroupName] = useState('');
   const [editingFormName, setEditingFormName] = useState<string | null>(null);
   const [formNameDraft, setFormNameDraft] = useState('');
+  const [showNewFormModal, setShowNewFormModal] = useState(false);
+  const [newFormGroupId, setNewFormGroupId] = useState<string>('');
 
   const selectedForm = feedbackForms.find(f => f.id === selectedFormId) ?? null;
 
@@ -33,6 +35,16 @@ export default function FeedbackFormsPage() {
     dispatch({ type: 'ADD_FEEDBACK_FORM_GROUP', group: { id, name: 'New Group' } });
     setEditingGroupId(id);
     setEditingGroupName('New Group');
+  };
+
+  const openNewFormModal = () => {
+    setNewFormGroupId(feedbackFormGroups[0]?.id ?? '');
+    setShowNewFormModal(true);
+  };
+
+  const confirmNewForm = () => {
+    setShowNewFormModal(false);
+    addForm(newFormGroupId || null);
   };
 
   const addForm = (groupId: string | null) => {
@@ -125,16 +137,16 @@ export default function FeedbackFormsPage() {
             {/* Top buttons */}
             <div className="p-3 border-b border-zinc-100 flex gap-2">
               <button
-                onClick={() => addForm(null)}
+                onClick={openNewFormModal}
                 className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
               >
-                <Plus size={13} /> NEW FORM
+                <Plus size={13} /> New Form
               </button>
               <button
                 onClick={addGroup}
                 className="flex-1 flex items-center justify-center gap-1.5 border border-indigo-500 text-indigo-600 hover:bg-indigo-50 text-xs font-semibold py-2 rounded-lg transition-colors"
               >
-                <Plus size={13} /> NEW GROUP
+                <Plus size={13} /> New Group
               </button>
             </div>
 
@@ -462,7 +474,7 @@ export default function FeedbackFormsPage() {
                       onClick={addQuestion}
                       className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                     >
-                      <Plus size={15} /> ADD ANOTHER QUESTION
+                      <Plus size={15} /> Add Another Question
                     </button>
                   </div>
                 </div>
@@ -478,6 +490,42 @@ export default function FeedbackFormsPage() {
           </div>
         </div>
       </div>
+
+      {/* ═══ New Form Modal ═══ */}
+      {showNewFormModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowNewFormModal(false)}>
+          <div className="bg-white rounded-xl shadow-xl p-6 w-80" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-zinc-900 mb-4">New Form</h3>
+            <div className="mb-4">
+              <label className="block text-xs text-zinc-500 mb-1.5">Group</label>
+              <select
+                value={newFormGroupId}
+                onChange={e => setNewFormGroupId(e.target.value)}
+                className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              >
+                <option value="">No group (Ungrouped)</option>
+                {feedbackFormGroups.map(g => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowNewFormModal(false)}
+                className="px-4 py-2 text-sm text-zinc-600 hover:text-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmNewForm}
+                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
