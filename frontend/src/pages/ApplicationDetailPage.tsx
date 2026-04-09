@@ -709,6 +709,12 @@ export default function ApplicationDetailPage() {
                               <div key={idx} className="bg-zinc-50 rounded-lg p-3.5 border border-zinc-100">
                                 <p className="text-sm font-semibold text-zinc-800 mb-1.5">{qa.question}</p>
                                 <p className="text-sm text-zinc-600 leading-relaxed">{qa.feedback}</p>
+                                {qa.comment && (
+                                  <div className="mt-2 pt-2 border-t border-zinc-100">
+                                    <p className="text-xs text-zinc-400 mb-0.5">Comments</p>
+                                    <p className="text-sm text-zinc-600">{qa.comment}</p>
+                                  </div>
+                                )}
                               </div>
                             ))
                           )}

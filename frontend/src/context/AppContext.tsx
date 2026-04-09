@@ -78,7 +78,7 @@ type Action =
   | { type: 'REORDER_INTERVIEW_QUESTIONS'; jobId: string; stageId: string; orderedIds: string[] }
   | { type: 'SET_FEEDBACK_LINK'; applicationId: string; stageId: string; token: string }
   | { type: 'SET_REJECT_INFO'; applicationId: string; rejectInfo: RejectInfo }
-  | { type: 'SUBMIT_FEEDBACK'; applicationId: string; stageId: string; interviewerId: string; score: number; questions: Array<{ question: string; feedback: string }> }
+  | { type: 'SUBMIT_FEEDBACK'; applicationId: string; stageId: string; interviewerId: string; score: number; questions: Array<{ question: string; feedback: string; comment?: string }> }
   | { type: 'SET_INTERVIEWER_META'; applicationId: string; stageId: string; interviewerId: string; meta: Partial<import('../mock/data').InterviewerAssignmentMeta> }
   | { type: 'ADD_FEEDBACK_FORM_GROUP'; group: FeedbackFormGroup }
   | { type: 'ADD_FEEDBACK_FORM'; form: FeedbackForm }

@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Paperclip, FileText, X, Star } from 'lucide-react';
 import logoSrc from '../assets/logo.png';
 import { useApp } from '../context/AppContext';
+import type { FeedbackFormQuestion } from '../mock/data';
 import { useLang } from '../context/LangContext';
 
 function formatDate(iso: string): string {
@@ -20,7 +21,7 @@ export default function InterviewerFeedbackPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
-  const { applications, candidates, jobs, stages, interviewers, interviewQuestions, dispatch } = useApp();
+  const { applications, candidates, jobs, stages, interviewers, interviewQuestions, feedbackForms, dispatch } = useApp();
   const { lang, setLang, t } = useLang();
 
   // ── Auth state ──────────────────────────────────────────────────────────────
@@ -31,6 +32,7 @@ export default function InterviewerFeedbackPage() {
   // ── Form state ──────────────────────────────────────────────────────────────
   const [score, setScore] = useState<number | null>(null);
   const [feedbackMap, setFeedbackMap] = useState<Record<string, string>>({});
+  const [commentMap, setCommentMap] = useState<Record<string, string>>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -52,6 +54,15 @@ export default function InterviewerFeedbackPage() {
 
   const assignedInterviewerIds = application?.stageInterviewers?.[stageId ?? ''] ?? [];
   const assignedInterviewers = interviewers.filter(iv => assignedInterviewerIds.includes(iv.id));
+
+  // Look up feedback form questions for the authed interviewer
+  const feedbackFormId = authedInterviewer
+    ? application?.stageInterviewerMeta?.[stageId!]?.[authedInterviewer.id]?.feedbackFormId
+    : undefined;
+  const feedbackForm = feedbackFormId ? feedbackForms.find(f => f.id === feedbackFormId) : undefined;
+  const formQuestions: FeedbackFormQuestion[] = feedbackForm
+    ? [...feedbackForm.questions].sort((a, b) => a.display_order - b.display_order)
+    : [];
 
   // Lang toggle button (for pages without Navbar)
   const LangToggle = () => (
@@ -82,6 +93,11 @@ export default function InterviewerFeedbackPage() {
       const match = assignedInterviewers.find(iv => iv.email.toLowerCase() === authEmail.trim().toLowerCase());
       if (!match) {
         setAuthError(t('feedback_email_error'));
+        return;
+      }
+      const formId = application.stageInterviewerMeta?.[stageId!]?.[match.id]?.feedbackFormId;
+      if (formId === 'ff8' && authEmail.trim().toLowerCase() !== 'yi@infstones.com') {
+        setAuthError('Access restricted. Only the designated interviewer can access this form.');
         return;
       }
       setAuthedInterviewer(match);
@@ -158,9 +174,11 @@ export default function InterviewerFeedbackPage() {
       alert(t('feedback_score_required'));
       return;
     }
-    const questions = jobQuestions.map(q => ({
+    const activeQuestions = formQuestions.length > 0 ? formQuestions : jobQuestions;
+    const questions = activeQuestions.map(q => ({
       question: q.question,
       feedback: feedbackMap[q.id] ?? '',
+      comment: commentMap[q.id] ?? '',
     }));
     dispatch({
       type: 'SUBMIT_FEEDBACK',
@@ -295,20 +313,83 @@ export default function InterviewerFeedbackPage() {
               </div>
             </div>
 
-            {/* Interview Questions */}
-            {jobQuestions.length > 0 && (
+            {/* Feedback */}
+            {(formQuestions.length > 0 ? formQuestions : jobQuestions).length > 0 && (
               <div className="bg-white rounded-xl border border-zinc-200 p-5">
-                <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-4">{t('feedback_interview_questions')}</h2>
+                <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-4">Feedback</h2>
                 <div className="space-y-5">
-                  {jobQuestions.map((q, idx) => (
+                  {(formQuestions.length > 0 ? formQuestions : jobQuestions).map((q, idx) => (
                     <div key={q.id}>
                       <label className="block text-sm font-semibold text-zinc-800 mb-2">
                         {idx + 1}. {q.question}
                       </label>
+                      {/* Type-specific input */}
+                      {'answer_type' in q && q.answer_type === 'dropdown' && q.options ? (
+                        <select
+                          value={feedbackMap[q.id] ?? ''}
+                          onChange={e => setFeedbackMap(prev => ({ ...prev, [q.id]: e.target.value }))}
+                          className="w-full border border-zinc-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+                        >
+                          <option value="">Select...</option>
+                          {q.options.map((opt, i) => (
+                            <option key={i} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      ) : 'answer_type' in q && q.answer_type === 'text_single' ? (
+                        <input
+                          type="text"
+                          value={feedbackMap[q.id] ?? ''}
+                          onChange={e => setFeedbackMap(prev => ({ ...prev, [q.id]: e.target.value }))}
+                          placeholder={t('feedback_enter_feedback')}
+                          className="w-full border border-zinc-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        />
+                      ) : 'answer_type' in q && q.answer_type === 'yes_no' ? (
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-1.5 text-sm text-zinc-700">
+                            <input
+                              type="radio"
+                              name={`yn-${q.id}`}
+                              value="Yes"
+                              checked={feedbackMap[q.id] === 'Yes'}
+                              onChange={() => setFeedbackMap(prev => ({ ...prev, [q.id]: 'Yes' }))}
+                            />
+                            Yes
+                          </label>
+                          <label className="flex items-center gap-1.5 text-sm text-zinc-700">
+                            <input
+                              type="radio"
+                              name={`yn-${q.id}`}
+                              value="No"
+                              checked={feedbackMap[q.id] === 'No'}
+                              onChange={() => setFeedbackMap(prev => ({ ...prev, [q.id]: 'No' }))}
+                            />
+                            No
+                          </label>
+                        </div>
+                      ) : 'answer_type' in q && q.answer_type === 'score' ? (
+                        <input
+                          type="number"
+                          value={feedbackMap[q.id] ?? ''}
+                          onChange={e => setFeedbackMap(prev => ({ ...prev, [q.id]: e.target.value }))}
+                          min={(q as any).score_min ?? 0}
+                          max={(q as any).score_max ?? 10}
+                          className="w-32 border border-zinc-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        />
+                      ) : (
+                        <textarea
+                          value={feedbackMap[q.id] ?? ''}
+                          onChange={e => setFeedbackMap(prev => ({ ...prev, [q.id]: e.target.value }))}
+                          placeholder={t('feedback_enter_feedback')}
+                          rows={3}
+                          className="w-full border border-zinc-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+                        />
+                      )}
+                      {/* Comments (Optional) */}
+                      <label className="block text-xs text-zinc-400 mt-2 mb-1">Comments (Optional)</label>
                       <textarea
-                        value={feedbackMap[q.id] ?? ''}
-                        onChange={e => setFeedbackMap(prev => ({ ...prev, [q.id]: e.target.value }))}
-                        placeholder={t('feedback_enter_feedback')}
+                        value={commentMap[q.id] ?? ''}
+                        onChange={e => setCommentMap(prev => ({ ...prev, [q.id]: e.target.value }))}
+                        placeholder="Add comments..."
                         rows={3}
                         className="w-full border border-zinc-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
                       />
