@@ -354,8 +354,13 @@ export const mockApplications: Application[] = [
       's3': ['iv1', 'iv2', 'iv6'],
     },
     stageInterviewerMeta: {
+      's2': {
+        'iv1': { meetingTime: '2026-03-10T10:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-08T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-08T09:05:00Z' },
+      },
       's3': {
-        'iv6': { feedbackFormId: 'ff8', meetingTime: '2026-04-10T14:00' },
+        'iv1': { meetingTime: '2026-03-20T10:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-18T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-18T09:05:00Z' },
+        'iv2': { meetingTime: '2026-03-20T14:00', feedbackFormId: 'ff4', calendarCreated: true, calendarCreatedAt: '2026-03-18T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-18T09:05:00Z' },
+        'iv6': { meetingTime: '2026-03-21T10:00', feedbackFormId: 'ff8', calendarCreated: true, calendarCreatedAt: '2026-03-19T09:00:00Z', inviteEmailSent: true, inviteEmailSentAt: '2026-03-19T09:05:00Z' },
       },
     },
     stageFeedback: {
