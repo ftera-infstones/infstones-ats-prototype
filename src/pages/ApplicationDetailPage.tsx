@@ -394,7 +394,7 @@ export default function ApplicationDetailPage() {
                                           </div>
                                         ) : meta.meetingTime ? (
                                           <div className="flex items-center gap-1.5 text-zinc-600">
-                                            <span>🗓 {formatMeetingTime(meta.meetingTime)} (UTC+8)</span>
+                                            <span>{formatMeetingTime(meta.meetingTime)} (UTC+8)</span>
                                             <button onClick={() => setEditingMeetingTime({ stageId: stage.id, ivId, value: meta.meetingTime! })} className="text-zinc-400 hover:text-indigo-500"><Pencil size={10} /></button>
                                           </div>
                                         ) : (
@@ -457,7 +457,6 @@ export default function ApplicationDetailPage() {
                                           </div>
                                         ) : selectedFeedbackForm ? (
                                           <div className="flex items-center gap-1 text-zinc-600">
-                                            <span className="text-zinc-400">📋</span>
                                             <span className="truncate">
                                               {selectedFormGroup ? <span className="text-zinc-400">{selectedFormGroup.name} / </span> : null}
                                               {selectedFeedbackForm.name}
@@ -488,7 +487,7 @@ export default function ApplicationDetailPage() {
                                           <button
                                             disabled={!canAction}
                                             onClick={() => setConfirmModal({ type: 'calendar', stageId: stage.id, ivId })}
-                                            className={`px-2 py-0.5 rounded font-medium ${canAction ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100' : 'text-zinc-300 cursor-not-allowed'}`}
+                                            className={`font-medium text-left block ${canAction ? 'text-indigo-500 hover:text-indigo-700' : 'text-zinc-300 cursor-not-allowed'}`}
                                           >{t('app_detail_create_calendar')}</button>
                                         )}
                                       </div>
