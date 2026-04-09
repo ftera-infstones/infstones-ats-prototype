@@ -114,7 +114,7 @@ export interface Candidate {
 
 export interface StageFeedback {
   score: number | null;
-  questions: Array<{ question: string; feedback: string }>;
+  questions: Array<{ question: string; feedback: string; comment?: string }>;
 }
 
 export type RejectReasonTag =
@@ -353,6 +353,11 @@ export const mockApplications: Application[] = [
       's2': ['iv1'],
       's3': ['iv1', 'iv2', 'iv6'],
     },
+    stageInterviewerMeta: {
+      's3': {
+        'iv6': { feedbackFormId: 'ff8', meetingTime: '2026-04-10T14:00' },
+      },
+    },
     stageFeedback: {
       's2': {
         'iv1': {
@@ -504,6 +509,7 @@ export const mockFeedbackFormGroups: FeedbackFormGroup[] = [
   { id: 'fg1', name: 'COM' },
   { id: 'fg2', name: '1 MAN' },
   { id: 'fg3', name: '2 FIN' },
+  { id: 'fg4', name: '3 DEV' },
 ];
 
 export const mockFeedbackForms: FeedbackForm[] = [
@@ -525,6 +531,135 @@ export const mockFeedbackForms: FeedbackForm[] = [
   { id: 'ff5', name: '1.2 MAN-Recruiter Interview Feedback Form', group_id: 'fg2', questions: [] },
   // 2 FIN group
   { id: 'ff6', name: 'FIN Interview Feedback Form', group_id: 'fg3', questions: [] },
+  // 3 DEV group
+  {
+    id: 'ff8',
+    name: 'DEV-QA PM Interview Feedback Form',
+    group_id: 'fg4',
+    questions: [
+      {
+        id: 'dq1',
+        question: '1.1 What important design-impacting recommendations have you proposed in a project\'s technical solution? [10 Points]',
+        answer_type: 'dropdown',
+        display_order: 1,
+        options: [
+          'The recommendation had a significant impact on the design of the technical solution: 10 Points',
+          'The recommendation had a moderate impact on the design of the technical solution: 6 Points',
+          'Failed to provide recommendations that had any impact on the design of the technical solution: 0 Point',
+        ],
+      },
+      {
+        id: 'dq2',
+        question: '1.2 Please describe a critical test point you designed that was proven to detect a major bug before go-live. [10 Points]',
+        answer_type: 'dropdown',
+        display_order: 2,
+        options: [
+          'The described test point detected and prevented a blocking-level bug before go-live: 10 Points',
+          'The described test point detected and prevented a major—but not blocking-level—bug before go-live: 6 Points',
+          'The described test point did not detect or prevent any major bugs before go-live: 0 Point',
+        ],
+      },
+      {
+        id: 'dq3',
+        question: '1.3 In the project, how did you identify a hidden risk point that even the product manager did not anticipate? [10 Points]',
+        answer_type: 'dropdown',
+        display_order: 3,
+        options: [
+          'Has a deep understanding of the project\'s business context; the identified risk point is hidden and has a significant impact on the business: 10 Points',
+          'Has a deep understanding of the project\'s business context; the identified risk point is hidden, but it does not have a significant impact on the business: 6 Points',
+          'Does not have a deep understanding of the project\'s business context, or fails to identify hidden risk points within the business: 0 Point',
+        ],
+      },
+      {
+        id: 'dq4',
+        question: '2.1 What problems have you solved that others were unable to resolve? [5 Points]',
+        answer_type: 'dropdown',
+        display_order: 4,
+        options: [
+          'Solved technical problems that others could not, resulting in a significant improvement in product quality or team efficiency: 5 Points',
+          'Solved technical problems that others could not, resulting in a moderate improvement in product quality or team efficiency: 3 Points',
+          'Failed to demonstrate the ability to solve technical problems that others could not, or the problems solved did not show sufficient value: 0 Point',
+        ],
+      },
+      {
+        id: 'dq5',
+        question: '2.2 Please provide an example to illustrate how you improved the team\'s overall quality assurance system. [5 Points]',
+        answer_type: 'dropdown',
+        display_order: 5,
+        options: [
+          'The example demonstrates a significant improvement to the team\'s overall quality assurance system, and it was proactively identified and driven by the candidate: 5 Points',
+          'The example demonstrates a moderate improvement to the team\'s overall quality assurance system: 3 Points',
+          'Failed to provide an example that demonstrates a significant improvement to the team\'s overall quality assurance system: 0 Point',
+        ],
+      },
+      {
+        id: 'dq6',
+        question: '3.1 When encountering an urgent production issue, how do you quickly locate the problem? [5 Points]',
+        answer_type: 'dropdown',
+        display_order: 6,
+        options: [
+          'Clearly describes the approach to locating the issue and is able to summarize it into a methodology: 5 Points',
+          'Clearly describes the approach to locating the issue, but does not proactively summarize it into a methodology: 3 Points',
+          'Unable to clearly describe the approach to locating the issue: 0 Point',
+        ],
+      },
+      {
+        id: 'dq7',
+        question: '3.2 Have you ever encountered a severe production incident? How did you handle it? [10 Points]',
+        answer_type: 'dropdown',
+        display_order: 7,
+        options: [
+          'Clearly describes the cause, symptoms, and impact of the production incident, as well as the resolution approach and outcome: 10 Points',
+          'Clearly describes the symptoms and impact of the production incident, as well as the resolution approach and outcome, but partially overlooks investigating the root cause: 6 Points',
+          'Unable to clearly describe the cause, symptoms, impact, resolution approach, and outcome of the production incident: 0 Point',
+        ],
+      },
+      {
+        id: 'dq8',
+        question: '3.3 Based on the severe production incident you just described, how would you prevent it? [5 Points]',
+        answer_type: 'dropdown',
+        display_order: 8,
+        options: [
+          'Able to propose an appropriate solution to prevent the incident, and demonstrates in-depth thinking about its root cause, potential impact scope, and other related risk points: 5 Points',
+          'Able to propose an appropriate solution to prevent the incident, but shows insufficient analysis of the root cause and lacks depth in considering the potential impact scope and other related risk points: 3 Points',
+          'Unable to propose a valid prevention solution for the incident, or shows no consideration of the root cause, potential impact scope, or related risk points: 0 Point',
+        ],
+      },
+      {
+        id: 'dq9',
+        question: '4.1 What kind of QA do you consider a good QA? What kind of QA do you dislike the most? [15 Points]',
+        answer_type: 'dropdown',
+        display_order: 9,
+        options: [
+          'Demonstrates all key qualities, including accountability, efficiency, strong communication skills, a passion for learning, and a high level of proactiveness: 15 Points',
+          'Demonstrates at least three of the following key qualities: accountability, efficiency, strong communication skills, a passion for learning, and a high level of proactiveness: 10 Points',
+          'Fails to demonstrate at least three of the following key qualities: accountability, efficiency, strong communication skills, a passion for learning, and a high level of proactiveness: 0 Point',
+        ],
+      },
+      {
+        id: 'dq10',
+        question: '5.1 Please design test cases for the My Project module. [10 Points]',
+        answer_type: 'dropdown',
+        display_order: 10,
+        options: [
+          'The test cases fully cover all positive (normal) and negative (exception) scenarios: 10 Points',
+          'The test cases fully cover all positive scenarios and the important negative scenarios: 6 Points',
+          'The test cases fail to fully cover all positive scenarios and the important negative scenarios: 0 Point',
+        ],
+      },
+      {
+        id: 'dq11',
+        question: '5.2 Please identify and describe the business risk points of the My Plan module. [15 Points]',
+        answer_type: 'dropdown',
+        display_order: 11,
+        options: [
+          'Able to quickly and accurately understand the business, and identify correct and important business risk points: 15 Points',
+          'Able to quickly and accurately understand the business, and identify correct business risk points: 10 Points',
+          'Unable to quickly and accurately understand the business, or fails to identify correct business risk points: 0 Point',
+        ],
+      },
+    ],
+  },
 ];
 
 export const mockStageHistory: StageHistory[] = [
