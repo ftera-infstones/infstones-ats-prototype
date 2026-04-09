@@ -334,7 +334,7 @@ export default function FeedbackFormsPage() {
                               <ArrowDown size={11} />
                             </button>
                           </div>
-                          <span className="text-zinc-400 text-xs w-5 flex-shrink-0 pt-2.5">{q.display_order}.</span>
+                          <span className="text-zinc-400 text-xs w-5 flex-shrink-0 pt-2.5"></span>
                           <div className="flex-1 space-y-2">
                             <input
                               type="text"

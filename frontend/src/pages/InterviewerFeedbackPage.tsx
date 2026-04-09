@@ -321,7 +321,7 @@ export default function InterviewerFeedbackPage() {
                   {(formQuestions.length > 0 ? formQuestions : jobQuestions).map((q, idx) => (
                     <div key={q.id}>
                       <label className="block text-sm font-semibold text-zinc-800 mb-2">
-                        {idx + 1}. {q.question}
+                        {q.question}
                       </label>
                       {/* Type-specific input */}
                       {'answer_type' in q && q.answer_type === 'dropdown' && q.options ? (
