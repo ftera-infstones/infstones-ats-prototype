@@ -318,7 +318,7 @@ export default function InterviewerFeedbackPage() {
               <div className="bg-white rounded-xl border border-zinc-200 p-5">
                 <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-4">Feedback</h2>
                 <div className="space-y-5">
-                  {(formQuestions.length > 0 ? formQuestions : jobQuestions).map((q, idx) => (
+                  {(formQuestions.length > 0 ? formQuestions : jobQuestions).map((q) => (
                     <div key={q.id}>
                       <label className="block text-sm font-semibold text-zinc-800 mb-2">
                         {q.question}
