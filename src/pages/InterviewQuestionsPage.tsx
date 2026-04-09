@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Plus, ChevronDown, ChevronRight, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
-import type { FeedbackForm, FeedbackFormQuestion, FeedbackQuestionType } from '../mock/data';
+import type { FeedbackForm, FeedbackFormQuestion, FeedbackQuestionType, ScorecardCriterion } from '../mock/data';
 import { FEEDBACK_QUESTION_TYPE_META } from '../mock/data';
+
+const CODE_LANGUAGES = ['JavaScript', 'TypeScript', 'Python', 'Java', 'Go', 'C++', 'SQL', 'Other'];
 
 const QUESTION_TYPES = Object.entries(FEEDBACK_QUESTION_TYPE_META) as [FeedbackQuestionType, { label: string; icon: string }][];
 
@@ -303,7 +305,22 @@ export default function FeedbackFormsPage() {
                             <div className="flex items-center gap-2">
                               <select
                                 value={q.answer_type}
-                                onChange={e => updateQuestion(q.id, { answer_type: e.target.value as FeedbackQuestionType })}
+                                onChange={e => {
+                                  const newType = e.target.value as FeedbackQuestionType;
+                                  const cleared: Partial<FeedbackFormQuestion> = {
+                                    answer_type: newType,
+                                    options: undefined,
+                                    score_min: undefined,
+                                    score_max: undefined,
+                                    criteria: undefined,
+                                    code_language: undefined,
+                                  };
+                                  if (newType === 'score') {
+                                    cleared.score_min = 1;
+                                    cleared.score_max = 10;
+                                  }
+                                  updateQuestion(q.id, cleared);
+                                }}
                                 className="border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs text-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                               >
                                 {QUESTION_TYPES.map(([type, meta]) => (
@@ -311,6 +328,122 @@ export default function FeedbackFormsPage() {
                                 ))}
                               </select>
                             </div>
+
+                            {/* Type-specific config */}
+                            {(['dropdown', 'multiple_choice', 'checkboxes'] as FeedbackQuestionType[]).includes(q.answer_type) && (
+                              <div className="space-y-1.5">
+                                <span className="text-xs font-medium text-zinc-500">Options</span>
+                                {(q.options ?? []).map((opt, oi) => (
+                                  <div key={oi} className="flex items-center gap-1.5">
+                                    <input
+                                      type="text"
+                                      value={opt}
+                                      onChange={e => {
+                                        const next = [...(q.options ?? [])];
+                                        next[oi] = e.target.value;
+                                        updateQuestion(q.id, { options: next });
+                                      }}
+                                      placeholder={`Option ${oi + 1}`}
+                                      className="flex-1 border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        const next = (q.options ?? []).filter((_, i) => i !== oi);
+                                        updateQuestion(q.id, { options: next });
+                                      }}
+                                      className="text-zinc-300 hover:text-red-500 text-xs px-1"
+                                    >✕</button>
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => updateQuestion(q.id, { options: [...(q.options ?? []), ''] })}
+                                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                                >+ Add option</button>
+                              </div>
+                            )}
+
+                            {q.answer_type === 'score' && (
+                              <div className="flex items-center gap-3">
+                                <label className="flex items-center gap-1.5 text-xs text-zinc-500">
+                                  Min:
+                                  <input
+                                    type="number"
+                                    value={q.score_min ?? 1}
+                                    onChange={e => updateQuestion(q.id, { score_min: Number(e.target.value) })}
+                                    className="w-16 border border-zinc-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                  />
+                                </label>
+                                <label className="flex items-center gap-1.5 text-xs text-zinc-500">
+                                  Max:
+                                  <input
+                                    type="number"
+                                    value={q.score_max ?? 10}
+                                    onChange={e => updateQuestion(q.id, { score_max: Number(e.target.value) })}
+                                    className="w-16 border border-zinc-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                  />
+                                </label>
+                              </div>
+                            )}
+
+                            {q.answer_type === 'scorecard' && (
+                              <div className="space-y-1.5">
+                                <span className="text-xs font-medium text-zinc-500">Criteria</span>
+                                {(q.criteria ?? []).map((c) => (
+                                  <div key={c.id} className="flex items-center gap-1.5">
+                                    <input
+                                      type="text"
+                                      value={c.name}
+                                      onChange={e => {
+                                        const next = (q.criteria ?? []).map(cr => cr.id === c.id ? { ...cr, name: e.target.value } : cr);
+                                        updateQuestion(q.id, { criteria: next });
+                                      }}
+                                      placeholder="Criterion name"
+                                      className="flex-1 border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={c.description ?? ''}
+                                      onChange={e => {
+                                        const next = (q.criteria ?? []).map(cr => cr.id === c.id ? { ...cr, description: e.target.value } : cr);
+                                        updateQuestion(q.id, { criteria: next });
+                                      }}
+                                      placeholder="Description (optional)"
+                                      className="flex-1 border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        const next = (q.criteria ?? []).filter(cr => cr.id !== c.id);
+                                        updateQuestion(q.id, { criteria: next });
+                                      }}
+                                      className="text-zinc-300 hover:text-red-500 text-xs px-1"
+                                    >✕</button>
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => {
+                                    const newCriterion: ScorecardCriterion = { id: `sc-${Date.now()}`, name: '', description: '' };
+                                    updateQuestion(q.id, { criteria: [...(q.criteria ?? []), newCriterion] });
+                                  }}
+                                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                                >+ Add criterion</button>
+                              </div>
+                            )}
+
+                            {q.answer_type === 'code' && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-zinc-500">Language:</span>
+                                <select
+                                  value={q.code_language ?? ''}
+                                  onChange={e => updateQuestion(q.id, { code_language: e.target.value })}
+                                  className="border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs text-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                >
+                                  <option value="">Select language...</option>
+                                  {CODE_LANGUAGES.map(lang => (
+                                    <option key={lang} value={lang}>{lang}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
                           </div>
                           <button
                             onClick={() => deleteQuestion(q.id)}

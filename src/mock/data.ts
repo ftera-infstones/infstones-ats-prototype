@@ -68,11 +68,22 @@ export const FEEDBACK_QUESTION_TYPE_META: Record<FeedbackQuestionType, { label: 
   yes_no:          { label: 'Yes / No',           icon: '○' },
 };
 
+export interface ScorecardCriterion {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export interface FeedbackFormQuestion {
   id: string;
   question: string;
   answer_type: FeedbackQuestionType;
   display_order: number;
+  options?: string[];
+  score_min?: number;
+  score_max?: number;
+  criteria?: ScorecardCriterion[];
+  code_language?: string;
 }
 
 export interface FeedbackForm {
