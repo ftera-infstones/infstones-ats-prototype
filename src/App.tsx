@@ -1,5 +1,5 @@
-import { HashRouter as BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AppProvider, useApp } from './context/AppContext';
 import { LangProvider } from './context/LangContext';
 import LoginPage from './pages/LoginPage';
 import JobsListPage from './pages/JobsListPage';
@@ -15,32 +15,55 @@ import CareerJobDetailPage from './pages/CareerJobDetailPage';
 import CareerApplyPage from './pages/CareerApplyPage';
 import AccessControlPage from './pages/AccessControlPage';
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isLoggedIn, loading } = useApp();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="text-zinc-400 text-sm">Loading...</div>
+      </div>
+    );
+  }
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public routes (no auth required) */}
+        <Route path="/careers" element={<CareersPage />} />
+        <Route path="/careers/:id" element={<CareerJobDetailPage />} />
+        <Route path="/careers/:id/apply" element={<CareerApplyPage />} />
+        <Route path="/feedback/:applicationId/:stageId" element={<InterviewerFeedbackPage />} />
+
+        {/* Auth routes */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* ATS platform routes — protected */}
+        <Route path="/" element={<Navigate to="/jobs" replace />} />
+        <Route path="/jobs" element={<AuthGuard><JobsListPage /></AuthGuard>} />
+        <Route path="/jobs/new" element={<AuthGuard><JobFormPage /></AuthGuard>} />
+        <Route path="/jobs/:id/edit" element={<AuthGuard><JobFormPage /></AuthGuard>} />
+        <Route path="/jobs/:id/kanban" element={<AuthGuard><KanbanPage /></AuthGuard>} />
+        <Route path="/applications/:id" element={<AuthGuard><ApplicationDetailPage /></AuthGuard>} />
+        <Route path="/settings/stages" element={<AuthGuard><PipelineSettingsPage /></AuthGuard>} />
+        <Route path="/settings/feedback-forms" element={<AuthGuard><FeedbackFormsPage /></AuthGuard>} />
+        <Route path="/settings/access-control" element={<AuthGuard><AccessControlPage /></AuthGuard>} />
+        <Route path="/interviewers" element={<AuthGuard><InterviewersPage /></AuthGuard>} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
 export default function App() {
   return (
     <LangProvider>
       <AppProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes (no auth required) */}
-            <Route path="/careers" element={<CareersPage />} />
-            <Route path="/careers/:id" element={<CareerJobDetailPage />} />
-            <Route path="/careers/:id/apply" element={<CareerApplyPage />} />
-            <Route path="/feedback/:applicationId/:stageId" element={<InterviewerFeedbackPage />} />
-
-            {/* ATS platform routes */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/jobs" element={<JobsListPage />} />
-            <Route path="/jobs/new" element={<JobFormPage />} />
-            <Route path="/jobs/:id/edit" element={<JobFormPage />} />
-            <Route path="/jobs/:id/kanban" element={<KanbanPage />} />
-            <Route path="/applications/:id" element={<ApplicationDetailPage />} />
-            <Route path="/settings/stages" element={<PipelineSettingsPage />} />
-            <Route path="/settings/feedback-forms" element={<FeedbackFormsPage />} />
-            <Route path="/settings/access-control" element={<AccessControlPage />} />
-            <Route path="/interviewers" element={<InterviewersPage />} />
-          </Routes>
-        </BrowserRouter>
+        <AppRoutes />
       </AppProvider>
     </LangProvider>
   );

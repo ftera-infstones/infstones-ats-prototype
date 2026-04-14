@@ -3,7 +3,7 @@ import { Pencil, Trash2, X, Check, UserPlus } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
 import { useLang } from '../context/LangContext';
-import type { Interviewer } from '../mock/data';
+import type { Interviewer } from '../types';
 
 interface FormState {
   name: string;

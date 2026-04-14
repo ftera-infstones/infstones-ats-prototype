@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Paperclip, FileText, X, Star } from 'lucide-react';
 import logoSrc from '../assets/logo.png';
 import { useApp } from '../context/AppContext';
-import type { FeedbackFormQuestion } from '../mock/data';
+import type { FeedbackFormQuestion } from '../types';
 import { useLang } from '../context/LangContext';
 
 function formatDate(iso: string): string {

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Plus, ChevronDown, ChevronRight, Trash2, GripVertical, ArrowUp, ArrowDown, FolderInput } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
-import type { FeedbackForm, FeedbackFormQuestion, FeedbackQuestionType, ScorecardCriterion } from '../mock/data';
-import { FEEDBACK_QUESTION_TYPE_META } from '../mock/data';
+import type { FeedbackForm, FeedbackFormQuestion, FeedbackQuestionType, ScorecardCriterion } from '../types';
+import { FEEDBACK_QUESTION_TYPE_META } from '../types';
 
 const CODE_LANGUAGES = ['JavaScript', 'TypeScript', 'Python', 'Java', 'Go', 'C++', 'SQL', 'Other'];
 

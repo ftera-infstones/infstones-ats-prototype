@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Paperclip, FileText, X, Check, Star, Pencil, AlertCircle } from 'lucide-react';
-import { REJECT_REASON_KEYS } from '../mock/data';
-import type { RejectReasonTag } from '../mock/data';
+import { REJECT_REASON_KEYS } from '../types';
+import type { RejectReasonTag } from '../types';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
 import { useLang } from '../context/LangContext';
@@ -29,7 +29,7 @@ export default function ApplicationDetailPage() {
   const [_copied, setCopied] = useState(false);
 
   // ── Reject reason (for Rejected stage) ─────────────────────────────────────
-  const REJECTED_STAGE_ID = 's6';
+  const REJECTED_STAGE_ID = stages.find(s => s.name.toLowerCase() === 'rejected')?.id ?? '';
   const [rejectTag, setRejectTag] = useState<RejectReasonTag | ''>('');
   const [rejectOtherText, setRejectOtherText] = useState('');
   const [rejectDescription, setRejectDescription] = useState('');

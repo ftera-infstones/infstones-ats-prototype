@@ -1,16 +1,31 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useLang } from '../context/LangContext';
 
 export default function LoginPage() {
-  const { login, users } = useApp();
+  const { isLoggedIn, loading } = useApp();
   const { lang, setLang, t } = useLang();
   const navigate = useNavigate();
 
+  // If already logged in, redirect to jobs
+  useEffect(() => {
+    if (!loading && isLoggedIn) {
+      navigate('/jobs', { replace: true });
+    }
+  }, [isLoggedIn, loading, navigate]);
+
   const handleGoogleLogin = () => {
-    login(users.find(u => u.email === 'zhenwu@infstones.com') ?? users[0]);
-    navigate('/jobs');
+    window.location.href = '/api/auth/google';
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="text-zinc-400 text-sm">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-indigo-50 flex items-center justify-center p-4">

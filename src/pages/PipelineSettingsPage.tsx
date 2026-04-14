@@ -11,7 +11,7 @@ import { GripVertical, Trash2, Plus, X, Check } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
 import { useLang } from '../context/LangContext';
-import type { PipelineStage } from '../mock/data';
+import type { PipelineStage } from '../types';
 
 interface SortableStageItemProps {
   stage: PipelineStage;

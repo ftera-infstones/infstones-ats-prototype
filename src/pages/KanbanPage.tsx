@@ -4,8 +4,8 @@ import { Plus, X, Eye, Upload } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
 import { useLang } from '../context/LangContext';
-import { REJECT_REASON_KEYS } from '../mock/data';
-import type { Application, RejectReasonTag } from '../mock/data';
+import { REJECT_REASON_KEYS } from '../types';
+import type { Application, RejectReasonTag } from '../types';
 
 function formatDate(iso: string) {
   try {
@@ -130,6 +130,7 @@ export default function KanbanPage() {
   const job = jobs.find(j => j.id === jobId);
   const jobApplications = applications.filter(a => a.job_id === jobId);
   const sortedStages = [...stages].sort((a, b) => a.display_order - b.display_order);
+  const rejectedStageId = stages.find(s => s.name.toLowerCase() === 'rejected')?.id ?? '';
 
   if (!job) {
     return (
@@ -204,7 +205,7 @@ export default function KanbanPage() {
                 stageName={stage.name}
                 stageColor={stage.color}
                 applications={stageApps}
-                isRejectedStage={stage.id === 's6'}
+                isRejectedStage={stage.id === rejectedStageId}
                 onAddClick={() => { setAddModal({ stageId: stage.id }); setAddResumeFile(null); setAddSource(''); setAddParsed(null); }}
               />
             );

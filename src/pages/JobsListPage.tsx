@@ -4,7 +4,7 @@ import { Plus, Briefcase, Users, ChevronRight, ChevronDown } from 'lucide-react'
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
 import { useLang } from '../context/LangContext';
-import type { Job } from '../mock/data';
+import type { Job } from '../types';
 
 type FilterTab = 'all' | 'open' | 'draft' | 'closed';
 

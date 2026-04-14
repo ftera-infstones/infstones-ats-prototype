@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { useApp } from '../context/AppContext';
 import { useLang } from '../context/LangContext';
-import type { Job, JobCommitment } from '../mock/data';
+import type { Job, JobCommitment } from '../types';
 
 const COMMITMENT_OPTIONS: JobCommitment[] = ['Full-time', 'Part-time', 'Contract', 'Internship'];
 const LOCATION_PRESETS = ['Remote', 'Austin, TX', 'New York, NY', 'San Francisco, CA', 'Singapore', 'Beijing, China'];
