@@ -1,4 +1,4 @@
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_BASE_URL as string) || '/api';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
