@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type {
   User,
@@ -353,6 +353,7 @@ const pendingIdMap = new Map<string, Promise<string>>();
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(initialState);
+  const questionsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // On mount: check session and load all data
   useEffect(() => {
@@ -812,12 +813,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       case 'UPDATE_FEEDBACK_FORM_QUESTIONS': {
-        try {
-          await feedbackFormsApi.updateFormQuestions(action.formId, action.questions);
-        } catch (err) {
-          console.error('updateFormQuestions error:', err);
-        }
+        // Update state immediately for responsive UI, debounce the API call
         setState(prev => reducerLogic(prev, action));
+        if (questionsDebounceRef.current) clearTimeout(questionsDebounceRef.current);
+        questionsDebounceRef.current = setTimeout(async () => {
+          try {
+            await feedbackFormsApi.updateFormQuestions(action.formId, action.questions);
+          } catch (err) {
+            console.error('updateFormQuestions error:', err);
+          }
+        }, 800);
         break;
       }
 
